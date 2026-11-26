@@ -11,7 +11,7 @@ const config = {
   env: process.env.NODE_ENV || 'development',
   server: {
     port: int(process.env.PORT, 4000),
-    corsOrigin: (process.env.CORS_ORIGIN || 'http://localhost:5173')
+    corsOrigin: (process.env.CORS_ORIGIN || 'https://automation.wahatliwadocumentclearingservice.com')
       .split(',')
       .map((o) => o.trim())
       .filter(Boolean),

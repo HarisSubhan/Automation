@@ -8,11 +8,13 @@
  *
  * REST
  *   GET    /api/health                        liveness + db check
+ *   GET    /api/health/socket                 socket.io diagnostics (clients + rooms)
  *   POST   /api/iris/start                    create session, open browser
  *   GET    /api/iris/sessions                 list sessions
  *   GET    /api/iris/sessions/:id             one session
  *   GET    /api/iris/sessions/:id/captcha     current CAPTCHA as base64
  *   POST   /api/iris/sessions/:id/captcha     submit human-read CAPTCHA text
+ *   GET    /api/iris/sessions/:id/watchers    how many socket clients are watching
  *   DELETE /api/iris/sessions/:id             abandon a session
  *
  * Socket.IO (namespace /iris)
@@ -40,9 +42,32 @@ app.use((req, res, next) => {
 
 const pendingCaptcha = new Map();
 
+// ---------------------------------------------------------------------------
+// REST
+// ---------------------------------------------------------------------------
+
 app.get('/api/health', async (_req, res) => {
   const db = await store.pingDb();
   res.json({ ok: true, env: config.env, db, sessions: manager.activeCount() });
+});
+
+/**
+ * Socket.IO diagnostics.
+ * Returns how many clients are currently attached to the /iris namespace,
+ * plus each client's id and the rooms it has joined (session:* rooms etc).
+ */
+app.get('/api/health/socket', (_req, res) => {
+  const clients = [...iris.sockets.values()].map((s) => ({
+    id: s.id,
+    rooms: [...s.rooms].filter((r) => r !== s.id),
+    connected: s.connected,
+  }));
+  res.json({
+    ok: true,
+    namespace: '/iris',
+    connectedClients: clients.length,
+    clients,
+  });
 });
 
 app.post('/api/iris/start', async (req, res) => {
@@ -118,6 +143,16 @@ app.post('/api/iris/sessions/:id/captcha', (req, res) => {
   res.json({ ok: true });
 });
 
+/**
+ * How many Socket.IO clients are watching a specific session room.
+ * (Clients join `session:<id>` via the `session:watch` event.)
+ */
+app.get('/api/iris/sessions/:id/watchers', (req, res) => {
+  const room = `session:${req.params.id}`;
+  const roomSockets = iris.adapter.rooms.get(room);
+  res.json({ sessionId: req.params.id, room, watchers: roomSockets ? roomSockets.size : 0 });
+});
+
 app.delete('/api/iris/sessions/:id', (req, res) => {
   const pending = pendingCaptcha.get(req.params.id);
   if (pending) {
@@ -129,6 +164,10 @@ app.delete('/api/iris/sessions/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+// ---------------------------------------------------------------------------
+// Socket.IO
+// ---------------------------------------------------------------------------
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: config.server.corsOrigin, methods: ['GET', 'POST'] },
@@ -137,9 +176,14 @@ const io = new Server(server, {
 const iris = io.of('/iris');
 
 iris.on('connection', (socket) => {
+  console.log(`[iris-captcha] ✅ socket connected: ${socket.id} | clients=${iris.sockets.size}`);
+
   socket.on('session:watch', (payload = {}) => {
     const { sessionId } = payload;
-    if (sessionId) socket.join(`session:${sessionId}`);
+    if (sessionId) {
+      socket.join(`session:${sessionId}`);
+      console.log(`[iris-captcha] ${socket.id} watching session:${sessionId}`);
+    }
   });
 
   socket.on('captcha:submit', (payload = {}) => {
@@ -150,6 +194,10 @@ iris.on('connection', (socket) => {
       return;
     }
     pending.resolve(String(text).trim());
+  });
+
+  socket.on('disconnect', (reason) => {
+    console.log(`[iris-captcha] ❌ socket disconnected: ${socket.id} — ${reason} | clients=${iris.sockets.size}`);
   });
 });
 
@@ -170,6 +218,10 @@ manager.on('error', (err) => {
   console.error('[iris-captcha] manager error:', err.message);
 });
 
+// ---------------------------------------------------------------------------
+// Boot
+// ---------------------------------------------------------------------------
+
 async function main() {
   manager.start();
   await new Promise((resolve) => {
@@ -177,6 +229,7 @@ async function main() {
   });
   console.log(`[iris-captcha] listening on http://127.0.0.1:${config.server.port}`);
   console.log(`[iris-captcha] db ${store.isDbEnabled() ? 'enabled (mysql)' : 'disabled (in-memory store)'}`);
+  console.log(`[iris-captcha] socket.io namespace: /iris`);
 }
 
 if (require.main === module) {
