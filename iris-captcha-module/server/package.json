@@ -1,0 +1,26 @@
+{
+  "name": "iris-captcha-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Express + Socket.IO + Playwright backend that opens FBR IRIS, shows the CAPTCHA to a human over the browser, and completes the verified login.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mysql2": "^3.10.0",
+    "playwright": "^1.45.0",
+    "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
