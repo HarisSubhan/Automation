@@ -10,6 +10,7 @@ function int(value, fallback) {
 const config = {
   env: process.env.NODE_ENV || 'development',
   server: {
+    host: process.env.HOST || '0.0.0.0',
     port: int(process.env.PORT, 4000),
     corsOrigin: (process.env.CORS_ORIGIN || 'https://automation.wahatliwadocumentclearingservice.com')
       .split(',')

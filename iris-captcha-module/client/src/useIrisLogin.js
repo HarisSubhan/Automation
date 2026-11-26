@@ -18,7 +18,7 @@ export function useIrisLogin({ serverUrl = 'https://automation.wahatliwadocument
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    const socket = io(`${serverUrl}/iris`, { transports: ['websocket'] });
+    const socket = io(`${serverUrl}/iris`, { transports: ['websocket', 'polling'] });
     socketRef.current = socket;
 
     socket.on('connect', () => setConnected(true));

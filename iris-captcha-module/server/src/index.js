@@ -225,9 +225,9 @@ manager.on('error', (err) => {
 async function main() {
   manager.start();
   await new Promise((resolve) => {
-    server.listen(config.server.port, '127.0.0.1', resolve);
+    server.listen(config.server.port, config.server.host, resolve);
   });
-  console.log(`[iris-captcha] listening on http://127.0.0.1:${config.server.port}`);
+  console.log(`[iris-captcha] listening on http://${config.server.host}:${config.server.port}`);
   console.log(`[iris-captcha] db ${store.isDbEnabled() ? 'enabled (mysql)' : 'disabled (in-memory store)'}`);
   console.log(`[iris-captcha] socket.io namespace: /iris`);
 }
