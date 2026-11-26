@@ -2,7 +2,7 @@ import { useState } from 'react';
 import useIrisLogin from '../useIrisLogin';
 import CaptchaPanel from '../components/CaptchaPanel';
 
-const SERVER_URL = import.meta.env.VITE_IRIS_SERVER_URL || 'https://automation.wahatliwadocumentclearingservice.com';
+const SERVER_URL = import.meta.env.VITE_IRIS_SERVER_URL || 'http://localhost:4000';
 
 export default function IrisLoginScreen() {
   const { session, status, captcha, connected, busy, start, submitCaptcha, cancel } = useIrisLogin({ serverUrl: SERVER_URL });
