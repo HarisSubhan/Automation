@@ -10,7 +10,7 @@ const EMPTY_SESSION = {
   updatedAt: null,
 };
 
-export function useIrisLogin({ serverUrl = 'http://localhost:4000' } = {}) {
+export function useIrisLogin({ serverUrl = 'https://automation.wahatliwadocumentclearingservice.com' } = {}) {
   const socketRef = useRef(null);
   const [session, setSession] = useState(EMPTY_SESSION);
   const [captcha, setCaptcha] = useState(null);

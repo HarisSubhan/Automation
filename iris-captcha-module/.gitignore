@@ -1,8 +1,8 @@
 node_modules/
-dist/
+
 .env
 *.log
 server/storage/
 playwright-report/
 test-results/
-.DS_Store
+
